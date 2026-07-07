@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NASA Mission Control - Multi-Folder Journal</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #161f30;
+            --text-color: #e2e8f0;
+            --nasa-blue: #0066cc;
+            --nasa-orange: #f05a28;
+            --success: #4ade80;
+            --fail: #f87171;
+            --neutral: #94a3b8;
+            --border: #233554;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .title-area h1 { font-size: 22px; letter-spacing: 1px; }
+        .title-area span { color: var(--nasa-orange); font-size: 11px; text-transform: uppercase; font-weight: bold; }
+
+        .stats-container { display: flex; gap: 15px; }
+        .stat-card {
+            background: rgba(11, 15, 25, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+            min-width: 110px;
+        }
+        .stat-value { font-size: 26px; font-weight: bold; color: var(--success); }
+        .stat-label { font-size: 10px; color: var(--neutral); text-transform: uppercase; }
+
+        /* NEU: Ordner Navigation */
+        .folder-management {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .folder-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .folder-btn {
+            background: #1e293b;
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            height: auto;
+        }
+        .folder-btn.active {
+            background: var(--nasa-blue);
+            border-color: #60a5fa;
+        }
+        .folder-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .folder-input {
+            max-width: 250px;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .interactive-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: rgba(11, 15, 25, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .panel-group { display: flex; flex-direction: column; gap: 8px; }
+        .panel-group label { font-size: 11px; color: var(--neutral); text-transform: uppercase; font-weight: bold; }
+        .btn-row { display: flex; gap: 8px; }
+
+        .selector-btn {
+            flex: 1;
+            background: #1e293b;
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+            height: auto;
+        }
+
+        .btn-buy.active { background: #2563eb; border-color: #60a5fa; box-shadow: 0 0 10px rgba(37,99,235,0.5); }
+        .btn-sell.active { background: #d97706; border-color: #fbbf24; box-shadow: 0 0 10px rgba(217,119,6,0.5); }
+        .btn-win.active { background: #16a34a; border-color: #4ade80; box-shadow: 0 0 10px rgba(22,163,74,0.5); }
+        .btn-loss.active { background: #dc2626; border-color: #f87171; box-shadow: 0 0 10px rgba(220,38,38,0.5); }
+        .btn-neutral.active { background: #475569; border-color: #94a3b8; box-shadow: 0 0 10px rgba(71,85,105,0.5); }
+
+        .input-field { background: #1e293b; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; outline: none; width: 100%; }
+        .action-btn { background: var(--nasa-orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; width: 100%; box-shadow: 0 4px 12px rgba(240,90,40,0.3); }
+        .action-btn:hover { background: #d0481d; }
+
+        .backup-container { display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end; }
+        .backup-btn { background: #334155; font-size: 12px; padding: 6px 12px; height: auto; width: auto; }
+        .delete-folder-btn { background: rgba(248, 113, 113, 0.1); color: var(--fail); border: 1px solid rgba(248, 113, 113, 0.3); padding: 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: bold; }
+
+        .table-container { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: rgba(11, 15, 25, 0.8); color: var(--neutral); font-size: 11px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .badge-buy { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-sell { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .result-win { color: var(--success); font-weight: bold; }
+        .result-loss { color: var(--fail); font-weight: bold; }
+        .result-neutral { color: var(--neutral); }
+
+        .delete-btn { background: transparent; color: var(--fail); border: 1px solid rgba(248, 113, 113, 0.2); padding: 4px 8px; font-size: 11px; height: auto; width: auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-area">
+            <h1>NASA CONTROL CENTER</h1>
+            <span>Multi-Method Core v3.0</span>
+        </div>
+        <div class="stats-container">
+            <div class="stat-card">
+                <div id="winRate" class="stat-value">0%</div>
+                <div class="stat-label">Winrate (<span id="activeFolderName">Standard</span>)</div>
+            </div>
+            <div class="stat-card">
+                <div id="totalTrades" class="stat-value" style="color: var(--text-color);">0</div>
+                <div class="stat-label">Total Trades</div>
+            </div>
+        </div>
+    </header>
+
+    <section class="folder-management">
+        <div class="panel-group">
+            <label>Meine Trading-Ordner (Methoden)</label>
+            <div id="folderBar" class="folder-bar"></div>
+        </div>
+        <div class="folder-controls">
+            <input type="text" id="newFolderInput" class="input-field folder-input" placeholder="Neues Setup (z.B. London NY)">
+            <button class="action-btn" style="width: auto; padding: 10px 20px;" onclick="createNewFolder()">📁 Ordner erstellen</button>
+            <button id="deleteFolderBtn" class="delete-folder-btn" onclick="deleteCurrentFolder()">🗑️ Aktuellen Ordner löschen</button>
+        </div>
+    </section>
+
+    <main class="main-content">
+        <div class="interactive-panel">
+            <div class="panel-group">
+                <label>1. Richtung</label>
+                <div class="btn-row">
+                    <button type="button" class="selector-btn btn-buy active" onclick="selectType('Buy')">BUY</button>
+                    <button type="button" class="selector-btn btn-sell" onclick="selectType('Sell')">SELL</button>
+                </div>
+            </div>
+
+            <div class="panel-group">
+                <label>2. Trade-Ergebnis</label>
+                <div class="btn-row">
+                    <button type="button" class="selector-btn btn-win active" onclick="selectResult('Gewonnen')">WIN (✓)</button>
+                    <button type="button" class="selector-btn btn-loss" onclick="selectResult('Verloren')">LOSS (✗)</button>
+                    <button type="button" class="selector-btn btn-neutral" onclick="selectResult('Neutral')">/ (BE)</button>
+                </div>
+            </div>
+
+            <div class="panel-group">
+                <label>3. Ticks / RR</label>
+                <input type="text" id="rr" class="input-field" placeholder="z.B. 1.62">
+            </div>
+
+            <div class="panel-group">
+                <label>4. Notizen / Warum?</label>
+                <input type="text" id="notes" class="input-field" placeholder="Grund für Einstieg...">
+            </div>
+
+            <div class="panel-group" style="justify-content: flex-end;">
+                <button class="action-btn" onclick="addTrade()">🚀 Trade Loggen</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Datum / Zeit</th>
+                        <th>Typ</th>
+                        <th>Ergebnis</th>
+                        <th>Ticks / RR</th>
+                        <th>Notizen</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody id="tradeLog"></tbody>
+            </table>
+        </div>
+
+        <div class="backup-container">
+            <button class="selector-btn backup-btn" onclick="exportData()">💾 Gesamt-Backup exportieren</button>
+            <button class="selector-btn backup-btn" onclick="importData()">📂 Backup laden</button>
+        </div>
+    </main>
+
+    <script>
+        let currentType = 'Buy';
+        let currentResult = 'Gewonnen';
+        
+        // Ordnerstruktur laden oder Standard erstellen
+        let folderData = JSON.parse(localStorage.getItem('nasa_folder_system')) || {
+            currentFolder: 'Standard',
+            folders: {
+                'Standard': []
+            }
+        };
+
+        function selectType(type) {
+            currentType = type;
+            document.querySelector('.btn-buy').classList.toggle('active', type === 'Buy');
+            document.querySelector('.btn-sell').classList.toggle('active', type === 'Sell');
+        }
+
+        function selectResult(res) {
+            currentResult = res;
+            document.querySelector('.btn-win').classList.toggle('active', res === 'Gewonnen');
+            document.querySelector('.btn-loss').classList.toggle('active', res === 'Verloren');
+            document.querySelector('.btn-neutral').classList.toggle('active', res === 'Neutral');
+        }
+
+        function createNewFolder() {
+            const input = document.getElementById('newFolderInput');
+            const name = input.value.trim();
+            if(!name) return;
+            if(folderData.folders[name]) { alert("Dieser Ordner existiert bereits."); return; }
+            
+            folderData.folders[name] = [];
+            folderData.currentFolder = name;
+            input.value = '';
+            saveAndRender();
+        }
+
+        function switchFolder(name) {
+            folderData.currentFolder = name;
+            saveAndRender();
+        }
+
+        function deleteCurrentFolder() {
+            const current = folderData.currentFolder;
+            if(current === 'Standard') { alert("Der Standard-Ordner kann nicht gelöscht werden."); return; }
+            if(confirm(`Möchtest du den Ordner "${current}" und ALLE darin enthaltenen Trades wirklich löschen?`)) {
+                delete folderData.folders[current];
+                folderData.currentFolder = 'Standard';
+                saveAndRender();
+            }
+        }
+
+        function addTrade() {
+            const now = new Date();
+            const dateStr = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth()+1).padStart(2, '0')}.`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            const rr = document.getElementById('rr').value || '-';
+            const notes = document.getElementById('notes').value || '-';
+
+            const newTrade = {
+                id: Date.now(),
+                timestamp: `${dateStr} um ${timeStr}`,
+                type: currentType,
+                result: currentResult,
+                rr: rr,
+                notes: notes
+            };
+
+            folderData.folders[folderData.currentFolder].unshift(newTrade);
+            document.getElementById('rr').value = '';
+            document.getElementById('notes').value = '';
+            
+            saveAndRender();
+        }
+
+        function deleteTrade(id) {
+            if(confirm("Diesen Trade wirklich löschen?")) {
+                folderData.folders[folderData.currentFolder] = folderData.folders[folderData.currentFolder].filter(t => t.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('nasa_folder_system', JSON.stringify(folderData));
+            renderFolders();
+            renderTable();
+            calculateStats();
+        }
+
+        function renderFolders() {
+            const bar = document.getElementById('folderBar');
+            bar.innerHTML = '';
+            
+            document.getElementById('activeFolderName').innerText = folderData.currentFolder;
+            document.getElementById('deleteFolderBtn').style.display = folderData.currentFolder === 'Standard' ? 'none' : 'block';
+
+            Object.keys(folderData.folders).forEach(name => {
+                const btn = document.createElement('button');
+                btn.className = `folder-btn ${name === folderData.currentFolder ? 'active' : ''}`;
+                btn.innerText = name;
+                btn.onclick = () => switchFolder(name);
+                bar.appendChild(btn);
+            });
+        }
+
+        function calculateStats() {
+            const currentTrades = folderData.folders[folderData.currentFolder] || [];
+            const total = currentTrades.length;
+            const wins = currentTrades.filter(t => t.result === 'Gewonnen').length;
+            const activeTrades = currentTrades.filter(t => t.result === 'Gewonnen' || t.result === 'Verloren').length;
+
+            document.getElementById('totalTrades').innerText = total;
+
+            if (activeTrades === 0) {
+                document.getElementById('winRate').innerText = '0%';
+                document.getElementById('winRate').style.color = 'var(--neutral)';
+            } else {
+                const rate = Math.round((wins / activeTrades) * 100);
+                document.getElementById('winRate').innerText = `${rate}%`;
+                if(rate >= 60) document.getElementById('winRate').style.color = 'var(--success)';
+                else if(rate >= 45) document.getElementById('winRate').style.color = 'var(--text-color)';
+                else document.getElementById('winRate').style.color = 'var(--fail)';
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tradeLog');
+            tbody.innerHTML = '';
+            const currentTrades = folderData.folders[folderData.currentFolder] || [];
+
+            currentTrades.forEach(t => {
+                const tr = document.createElement('tr');
+                let resClass = 'result-neutral', resSign = '/ BE';
+                if(t.result === 'Gewonnen') { resClass = 'result-win'; resSign = '✓ WIN'; }
+                if(t.result === 'Verloren') { resClass = 'result-loss'; resSign = '✗ LOSS'; }
+
+                tr.innerHTML = `
+                    <td>${t.timestamp}</td>
+                    <td><span class="badge ${t.type === 'Buy' ? 'badge-buy' : 'badge-sell'}">${t.type}</span></td>
+                    <td class="${resClass}">${resSign}</td>
+                    <td><b>${t.rr}</b></td>
+                    <td style="white-space: pre-wrap; max-width: 350px;">${t.notes}</td>
+                    <td><button class="delete-btn" onclick="deleteTrade(${t.id})">Löschen</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(folderData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "nasa_multipurpose_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = readerEvent => {
+                    try {
+                        const parsed = JSON.parse(readerEvent.target.result);
+                        if(parsed.folders && parsed.currentFolder) {
+                            folderData = parsed;
+                            saveAndRender();
+                            alert("Backup mit allen Ordnern erfolgreich wiederhergestellt!");
+                        } else { alert("Ungültiges Backup-Format."); }
+                    } catch(c) { alert("Fehler beim Lesen des Backups."); }
+                }
+                reader.readAsText(file);
+            }
+            input.click();
+        }
+
+        // Init
+        saveAndRender();
+    </script>
+</body>
+</html>
