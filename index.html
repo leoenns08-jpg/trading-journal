@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NASA Mission Control - Trading Journal</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #161f30;
+            --text-color: #e2e8f0;
+            --nasa-blue: #0066cc;
+            --nasa-orange: #f05a28;
+            --success: #4ade80;
+            --fail: #f87171;
+            --neutral: #94a3b8;
+            --border: #233554;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .title-area h1 {
+            font-size: 24px;
+            letter-spacing: 1px;
+            color: var(--text-color);
+        }
+        
+        .title-area span {
+            color: var(--nasa-orange);
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: rgba(11, 15, 25, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--neutral);
+            text-transform: uppercase;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        /* Eingabe-Formular */
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(11, 15, 25, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 11px;
+            color: var(--neutral);
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            background: #1e293b;
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--nasa-blue);
+        }
+
+        button {
+            background: var(--nasa-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 40px;
+            align-self: flex-end;
+        }
+
+        button:hover {
+            background: #0052a3;
+        }
+
+        /* Tabelle */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        th {
+            background: rgba(11, 15, 25, 0.8);
+            color: var(--neutral);
+            font-size: 12px;
+            text-transform: uppercase;
+            padding: 12px 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .badge-buy { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-sell { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        
+        .result-win { color: var(--success); font-weight: bold; }
+        .result-loss { color: var(--fail); font-weight: bold; }
+        .result-neutral { color: var(--neutral); }
+
+        .delete-btn {
+            background: transparent;
+            color: var(--fail);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            padding: 4px 8px;
+            height: auto;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            height: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title-area">
+            <h1>TRADING JOURNAL</h1>
+            <span>NASA Advanced Analytics System</span>
+        </div>
+        <div class="stats-container">
+            <div class="stat-card">
+                <div id="winRate" class="stat-value">0%</div>
+                <div class="stat-label">Winrate</div>
+            </div>
+            <div class="stat-card">
+                <div id="totalTrades" class="stat-value" style="color: var(--text-color);">0</div>
+                <div class="stat-label">Total Trades</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="input-row">
+            <div class="input-group">
+                <label>Datum</label>
+                <input type="date" id="date">
+            </div>
+            <div class="input-group">
+                <label>Uhrzeit</label>
+                <input type="time" id="time">
+            </div>
+            <div class="input-group">
+                <label>Typ</label>
+                <select id="type">
+                    <option value="Buy">Buy</option>
+                    <option value="Sell">Sell</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Ergebnis</label>
+                <select id="result">
+                    <option value="Gewonnen">✓ Gewonnen</option>
+                    <option value="Verloren">✗ Verloren</option>
+                    <option value="Neutral">/ Neutral</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Ticks / RR</label>
+                <input type="text" id="rr" placeholder="e.g. 1,57">
+            </div>
+            <div class="input-group" style="grid-column: span 2;">
+                <label>Notizen / Warum?</label>
+                <textarea id="notes" placeholder="Grund für Einstieg/Ausstieg..."></textarea>
+            </div>
+            <button onclick="addTrade()">Eintragen</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Uhrzeit</th>
+                    <th>Buy / Sell</th>
+                    <th>Ergebnis</th>
+                    <th>Ticks / RR</th>
+                    <th>Notizen</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody id="tradeLog">
+                </tbody>
+        </table>
+    </main>
+
+    <script>
+        // Setzt das heutige Datum und aktuelle Uhrzeit als Standard
+        document.getElementById('date').valueAsDate = new Date();
+        const now = new Date();
+        document.getElementById('time').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        // Trades aus dem Speicher laden oder leeres Array erstellen
+        let trades = JSON.parse(localStorage.getItem('nasa_trades')) || [];
+
+        function saveAndRender() {
+            localStorage.setItem('nasa_trades', JSON.stringify(trades));
+            renderTable();
+            calculateStats();
+        }
+
+        function addTrade() {
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const type = document.getElementById('type').value;
+            const result = document.getElementById('result').value;
+            const rr = document.getElementById('rr').value;
+            const notes = document.getElementById('notes').value;
+
+            if(!date || !time) {
+                alert("Bitte Datum und Uhrzeit eintragen.");
+                return;
+            }
+
+            const newTrade = { id: Date.now(), date, time, type, result, rr, notes };
+            trades.unshift(newTrade); // Fügt es oben an der Liste an
+
+            // Inputs zurücksetzen (außer Datum/Zeit für schnelleres Tippen)
+            document.getElementById('rr').value = '';
+            document.getElementById('notes').value = '';
+
+            saveAndRender();
+        }
+
+        function deleteTrade(id) {
+            trades = trades.filter(t => t.id !== id);
+            saveAndRender();
+        }
+
+        function calculateStats() {
+            const total = trades.length;
+            const wins = trades.filter(t => t.result === 'Gewonnen').length;
+            const validTradesForWinrate = trades.filter(t => t.result === 'Gewonnen' || t.result === 'Verloren').length;
+
+            document.getElementById('totalTrades').innerText = total;
+
+            if (validTradesForWinrate === 0) {
+                document.getElementById('winRate').innerText = '0%';
+                document.getElementById('winRate').style.color = 'var(--neutral)';
+            } else {
+                const rate = Math.round((wins / validTradesForWinrate) * 100);
+                document.getElementById('winRate').innerText = `${rate}%`;
+                
+                // Farbe der Winrate dynamisch anpassen
+                if(rate >= 60) document.getElementById('winRate').style.color = 'var(--success)';
+                else if(rate >= 45) document.getElementById('winRate').style.color = 'var(--text-color)';
+                else document.getElementById('winRate').style.color = 'var(--fail)';
+            }
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}.${month}.`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tradeLog');
+            tbody.innerHTML = '';
+
+            trades.forEach(t => {
+                const tr = document.createElement('tr');
+
+                let resultClass = 'result-neutral';
+                let resultSign = '/';
+                if(t.result === 'Gewonnen') { resultClass = 'result-win'; resultSign = '✓'; }
+                if(t.result === 'Verloren') { resultClass = 'result-loss'; resultSign = '✗'; }
+
+                tr.innerHTML = `
+                    <td>${formatDate(t.date)}</td>
+                    <td>${t.time}</td>
+                    <td><span class="badge ${t.type === 'Buy' ? 'badge-buy' : 'badge-sell'}">${t.type}</span></td>
+                    <td class="${resultClass}">${resultSign}</td>
+                    <td>${t.rr}</td>
+                    <td style="white-space: pre-wrap; max-width: 400px;">${t.notes}</td>
+                    <td><button class="delete-btn" onclick="deleteTrade(${t.id})">Löschen</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Beim ersten Laden ausführen
+        calculateStats();
+        renderTable();
+    </script>
+</body>
+</html>
